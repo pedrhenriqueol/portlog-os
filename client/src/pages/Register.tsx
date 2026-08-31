@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
+import { maskCNPJ } from '../utils/masks';
 import { 
   Ship, 
   ShieldCheck, 
@@ -31,13 +32,16 @@ export const Register: React.FC = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
 
-  // Auto-gera o slug a partir do nome do terminal
   const handleTenantNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     setTenantName(val);
     if (!tenantSlug || tenantSlug === generateSlug(tenantName)) {
       setTenantSlug(generateSlug(val));
     }
+  };
+
+  const handleCnpjChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setCnpj(maskCNPJ(e.target.value));
   };
 
   const generateSlug = (text: string) => {
@@ -53,6 +57,12 @@ export const Register: React.FC = () => {
     e.preventDefault();
     setError('');
 
+    const cleanCnpj = cnpj.replace(/\D/g, '');
+    if (cleanCnpj.length !== 14) {
+      setError('Por favor, informe um CNPJ válido com 14 dígitos.');
+      return;
+    }
+
     if (password.length < 8) {
       setError('A senha deve conter no mínimo 8 caracteres.');
       return;
@@ -66,7 +76,6 @@ export const Register: React.FC = () => {
     setLoading(true);
 
     try {
-      // 1. Cadastra o novo Tenant + Administrador Master no Supabase
       await api.post('/auth/register-tenant', {
         tenantName: tenantName.trim(),
         tenantSlug: tenantSlug.trim(),
@@ -78,7 +87,6 @@ export const Register: React.FC = () => {
 
       setSuccess(true);
 
-      // 2. Faz o auto-login imediato na conta criada
       setTimeout(async () => {
         await login(tenantSlug.trim(), email.trim().toLowerCase(), password);
         navigate('/', { replace: true });
@@ -170,9 +178,10 @@ export const Register: React.FC = () => {
                   <input
                     type="text"
                     required
+                    maxLength={18}
                     placeholder="00.000.000/0001-00"
                     value={cnpj}
-                    onChange={(e) => setCnpj(e.target.value)}
+                    onChange={handleCnpjChange}
                     className="w-full pl-8 pr-3 py-2 bg-port-darker border border-port-border rounded-xl text-white placeholder-gray-600 focus:outline-none focus:border-port-accent font-mono"
                   />
                 </div>
@@ -271,7 +280,6 @@ export const Register: React.FC = () => {
           </button>
         </form>
 
-        {/* Link para voltar ao login */}
         <div className="mt-5 text-center text-xs text-gray-400">
           Já possui um terminal cadastrado?{' '}
           <Link to="/login" className="text-port-accent hover:underline font-medium">
