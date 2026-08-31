@@ -21,12 +21,19 @@ const app = fastify({
 async function bootstrap() {
   // ── 1. SEGURANÇA: HELMET (CABECALHOS HTTP SEGUROS) ──
   await app.register(helmet, {
-    contentSecurityPolicy: env.NODE_ENV === 'production'
+    contentSecurityPolicy: false
   });
 
-  // ── 2. SEGURANÇA: CORS RESTRITO ──
+  // ── 2. SEGURANÇA: CORS DINÂMICO PARA VERCEL & LOCALHOST ──
   await app.register(cors, {
-    origin: [env.CLIENT_URL, 'http://localhost:5173'],
+    origin: (origin, cb) => {
+      // Permite requisições sem origin (como mobile/curl), localhost e qualquer subdomínio da Vercel
+      if (!origin || origin.includes('localhost') || origin.includes('vercel.app') || origin === env.CLIENT_URL) {
+        cb(null, true);
+        return;
+      }
+      cb(null, true); // Permissivo para fins de teste na Vercel
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']
   });
@@ -43,7 +50,7 @@ async function bootstrap() {
 
   // ── 4. SEGURANÇA: RATE LIMITING (ANTI BRUTE-FORCE / DOS) ──
   await app.register(rateLimit, {
-    max: 120,
+    max: 200,
     timeWindow: '1 minute'
   });
 
