@@ -7,10 +7,13 @@ import {
   Clock, 
   User, 
   CheckCircle2,
-  AlertTriangle
+  AlertTriangle,
+  Layers,
+  Sparkles
 } from 'lucide-react';
 import { CreateWorkOrderModal } from '../components/CreateWorkOrderModal';
 import { WorkOrderDetailModal } from '../components/WorkOrderDetailModal';
+import { motion } from 'framer-motion';
 
 export const WorkOrders: React.FC = () => {
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
@@ -70,7 +73,12 @@ export const WorkOrders: React.FC = () => {
   ];
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
+    <motion.div 
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      className="space-y-6 max-w-7xl mx-auto"
+    >
       {/* Top Action Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -79,13 +87,15 @@ export const WorkOrders: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-3">
-          <button 
+          <motion.button 
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
             onClick={() => setIsCreateModalOpen(true)}
-            className="py-2.5 px-4 bg-port-accent hover:bg-port-accentHover text-white font-medium rounded-xl transition-all shadow-lg shadow-port-accent/20 flex items-center gap-2 text-sm cursor-pointer"
+            className="py-2.5 px-4 bg-port-accent hover:bg-port-accentHover text-white font-medium rounded-xl transition-all shadow-lg shadow-port-accent/25 flex items-center gap-2 text-sm cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>Abrir Nova OS</span>
-          </button>
+          </motion.button>
         </div>
       </div>
 
@@ -119,8 +129,9 @@ export const WorkOrders: React.FC = () => {
                   </div>
                 ) : (
                   ordersInCol.map((wo) => (
-                    <div 
+                    <motion.div 
                       key={wo.id}
+                      whileHover={{ y: -3, transition: { duration: 0.15 } }}
                       onClick={() => setSelectedWO(wo)}
                       className="p-4 rounded-xl bg-port-card border border-port-border/80 hover:border-port-accent/50 transition-all shadow-md group cursor-pointer"
                     >
@@ -161,7 +172,7 @@ export const WorkOrders: React.FC = () => {
                           {wo.assignedTo ? wo.assignedTo.name.split(' ')[0] : 'Supervisor'}
                         </span>
                       </div>
-                    </div>
+                    </motion.div>
                   ))
                 )}
               </div>
@@ -188,6 +199,6 @@ export const WorkOrders: React.FC = () => {
         onUpdateStatus={handleUpdateStatus}
         onToggleChecklist={handleToggleChecklist}
       />
-    </div>
+    </motion.div>
   );
 };

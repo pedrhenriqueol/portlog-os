@@ -7,10 +7,13 @@ import {
   Clock, 
   CheckCircle2, 
   ArrowUpRight,
-  TrendingUp
+  TrendingUp,
+  Ship,
+  Sparkles
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip } from 'recharts';
+import { motion } from 'framer-motion';
 
 export const Dashboard: React.FC = () => {
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
@@ -45,22 +48,48 @@ export const Dashboard: React.FC = () => {
     { name: 'Dom', disponibilidade: 98.8, mttr: 1.8 },
   ];
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: { staggerChildren: 0.08 }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 16 },
+    show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: 'easeOut' } }
+  };
+
   return (
-    <div className="space-y-8 max-w-7xl mx-auto">
+    <motion.div 
+      variants={containerVariants}
+      initial="hidden"
+      animate="show"
+      className="space-y-8 max-w-7xl mx-auto"
+    >
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-white tracking-tight">Centro de Comando & Telemetria Portuária</h1>
-        <p className="text-sm text-gray-400 mt-1">Supervisão em tempo real de disponibilidade de berço, frotas e cumprimento de SLA de manutenção.</p>
-      </div>
+      <motion.div variants={itemVariants} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold text-white tracking-tight">Centro de Comando & Telemetria</h1>
+            <span className="flex items-center gap-1 text-[11px] font-mono px-2 py-0.5 rounded-full bg-port-emerald/10 border border-port-emerald/30 text-port-emerald">
+              <span className="w-1.5 h-1.5 rounded-full bg-port-emerald animate-pulse" />
+              Sincronizado Supabase
+            </span>
+          </div>
+          <p className="text-sm text-gray-400 mt-1">Supervisão em tempo real de disponibilidade de berço, frotas e cumprimento de SLA de manutenção.</p>
+        </div>
+      </motion.div>
 
       {/* KPI Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+      <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
         
         {/* Disponibilidade da Frota */}
-        <div className="p-5 bg-port-card/70 border border-port-border/80 rounded-2xl relative overflow-hidden group">
+        <div className="p-5 bg-port-card/70 hover:bg-port-card/90 border border-port-border/80 hover:border-port-emerald/50 rounded-2xl relative overflow-hidden transition-all duration-300 shadow-lg hover:shadow-port-emerald/5 group">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold uppercase tracking-wider text-gray-400">Disponibilidade Geral</span>
-            <div className="w-8 h-8 rounded-lg bg-port-emerald/10 border border-port-emerald/30 flex items-center justify-center text-port-emerald">
+            <div className="w-9 h-9 rounded-xl bg-port-emerald/10 border border-port-emerald/30 flex items-center justify-center text-port-emerald group-hover:scale-110 transition-transform">
               <Activity className="w-4 h-4" />
             </div>
           </div>
@@ -78,10 +107,10 @@ export const Dashboard: React.FC = () => {
         </div>
 
         {/* Ordens de Serviço Críticas */}
-        <div className="p-5 bg-port-card/70 border border-port-border/80 rounded-2xl relative overflow-hidden">
+        <div className="p-5 bg-port-card/70 hover:bg-port-card/90 border border-port-border/80 hover:border-port-rose/50 rounded-2xl relative overflow-hidden transition-all duration-300 shadow-lg hover:shadow-port-rose/5 group">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold uppercase tracking-wider text-gray-400">Emergencial Berço</span>
-            <div className="w-8 h-8 rounded-lg bg-port-rose/10 border border-port-rose/30 flex items-center justify-center text-port-rose">
+            <div className="w-9 h-9 rounded-xl bg-port-rose/10 border border-port-rose/30 flex items-center justify-center text-port-rose group-hover:scale-110 transition-transform">
               <AlertTriangle className="w-4 h-4" />
             </div>
           </div>
@@ -91,14 +120,14 @@ export const Dashboard: React.FC = () => {
             </span>
             <span className="text-xs text-gray-400 font-mono">Risco Demurrage</span>
           </div>
-          <p className="text-[11px] text-gray-500 mt-1 font-mono">Paradas com impacto direto na atracação</p>
+          <p className="text-[11px] text-gray-500 mt-1 font-mono">Paradas com impacto na atracação</p>
         </div>
 
         {/* Tempo Médio de Reparo (MTTR) */}
-        <div className="p-5 bg-port-card/70 border border-port-border/80 rounded-2xl relative overflow-hidden">
+        <div className="p-5 bg-port-card/70 hover:bg-port-card/90 border border-port-border/80 hover:border-port-accent/50 rounded-2xl relative overflow-hidden transition-all duration-300 shadow-lg hover:shadow-port-accent/5 group">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold uppercase tracking-wider text-gray-400">MTTR Médio</span>
-            <div className="w-8 h-8 rounded-lg bg-port-accent/10 border border-port-accent/30 flex items-center justify-center text-port-accent">
+            <div className="w-9 h-9 rounded-xl bg-port-accent/10 border border-port-accent/30 flex items-center justify-center text-port-accent group-hover:scale-110 transition-transform">
               <Clock className="w-4 h-4" />
             </div>
           </div>
@@ -107,17 +136,17 @@ export const Dashboard: React.FC = () => {
               {metrics ? metrics.mttrHours : '0.0h'}
             </span>
             <span className="text-xs text-port-emerald flex items-center font-medium">
-              Concluídas no mês
+              Concluídas
             </span>
           </div>
-          <p className="text-[11px] text-gray-500 mt-1 font-mono">Tempo médio de reparo</p>
+          <p className="text-[11px] text-gray-500 mt-1 font-mono">Tempo médio de intervenção</p>
         </div>
 
         {/* Cumprimento de SLA */}
-        <div className="p-5 bg-port-card/70 border border-port-border/80 rounded-2xl relative overflow-hidden">
+        <div className="p-5 bg-port-card/70 hover:bg-port-card/90 border border-port-border/80 hover:border-port-amber/50 rounded-2xl relative overflow-hidden transition-all duration-300 shadow-lg hover:shadow-port-amber/5 group">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold uppercase tracking-wider text-gray-400">Estouros de SLA</span>
-            <div className="w-8 h-8 rounded-lg bg-port-amber/10 border border-port-amber/30 flex items-center justify-center text-port-amber">
+            <div className="w-9 h-9 rounded-xl bg-port-amber/10 border border-port-amber/30 flex items-center justify-center text-port-amber group-hover:scale-110 transition-transform">
               <CheckCircle2 className="w-4 h-4" />
             </div>
           </div>
@@ -130,10 +159,10 @@ export const Dashboard: React.FC = () => {
           <p className="text-[11px] text-gray-500 mt-1 font-mono">Controle de pontualidade técnica</p>
         </div>
 
-      </div>
+      </motion.div>
 
       {/* Main Charts & Live Feed Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         {/* Availability Telemetry Chart */}
         <div className="lg:col-span-2 p-6 bg-port-card/50 border border-port-border/80 rounded-2xl">
@@ -142,7 +171,8 @@ export const Dashboard: React.FC = () => {
               <h3 className="font-semibold text-white text-base">Disponibilidade Operacional vs MTTR (7 Dias)</h3>
               <p className="text-xs text-gray-400">Rastreamento de taxa de uptime dos guindastes STS e frotas de pátio</p>
             </div>
-            <span className="text-xs font-mono px-2.5 py-1 rounded bg-port-accent/10 border border-port-accent/30 text-port-accent">
+            <span className="text-xs font-mono px-2.5 py-1 rounded-lg bg-port-accent/10 border border-port-accent/30 text-port-accent flex items-center gap-1.5">
+              <Sparkles className="w-3 h-3" />
               Telemetry Stream
             </span>
           </div>
@@ -174,41 +204,44 @@ export const Dashboard: React.FC = () => {
             <p className="text-xs text-gray-400 mb-4">Equipamentos cadastrados no terminal</p>
 
             <div className="space-y-3">
-              {assets.slice(0, 4).map((item) => (
-                <div key={item.id} className="p-3 rounded-xl bg-port-dark/60 border border-port-border/50 flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-3 min-w-0">
-                    {/* Badge com largura flexível e auto-wrap prevention */}
-                    <div className="px-2.5 py-1.5 rounded-lg bg-port-card border border-port-border/80 flex items-center justify-center text-xs font-mono font-bold text-port-accent shrink-0 min-w-[56px] text-center">
-                      {item.code}
+              {assets.length === 0 && !loading ? (
+                <p className="text-xs text-gray-500 italic p-4 text-center">Nenhum equipamento cadastrado ainda.</p>
+              ) : (
+                assets.slice(0, 4).map((item) => (
+                  <div key={item.id} className="p-3 rounded-xl bg-port-dark/60 border border-port-border/50 hover:border-port-accent/40 transition-all flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="px-2.5 py-1.5 rounded-lg bg-port-card border border-port-border/80 flex items-center justify-center text-xs font-mono font-bold text-port-accent shrink-0 min-w-[56px] text-center">
+                        {item.code}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-medium text-white truncate">{item.name}</p>
+                        <span className="text-[10px] text-gray-400 font-mono block truncate">{item.locationBerth || 'Pátio Principal'}</span>
+                      </div>
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs font-medium text-white truncate">{item.name}</p>
-                      <span className="text-[10px] text-gray-400 font-mono block truncate">{item.locationBerth || 'Pátio Principal'}</span>
-                    </div>
-                  </div>
 
-                  <span className={`text-[10px] font-mono font-semibold px-2 py-0.5 rounded border shrink-0 ${
-                    item.status === 'OPERACIONAL'
-                      ? 'bg-port-emerald/10 border-port-emerald/30 text-port-emerald'
-                      : 'bg-port-amber/10 border-port-amber/30 text-port-amber'
-                  }`}>
-                    {item.status === 'OPERACIONAL' ? 'ONLINE' : 'MANUT'}
-                  </span>
-                </div>
-              ))}
+                    <span className={`text-[10px] font-mono font-semibold px-2 py-0.5 rounded border shrink-0 ${
+                      item.status === 'OPERACIONAL'
+                        ? 'bg-port-emerald/10 border-port-emerald/30 text-port-emerald'
+                        : 'bg-port-amber/10 border-port-amber/30 text-port-amber'
+                    }`}>
+                      {item.status === 'OPERACIONAL' ? 'ONLINE' : 'MANUT'}
+                    </span>
+                  </div>
+                ))
+              )}
             </div>
           </div>
 
           <Link 
             to="/assets"
-            className="w-full mt-4 py-2.5 px-3 bg-port-card hover:bg-port-border/40 border border-port-border text-xs font-medium text-gray-300 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+            className="w-full mt-4 py-2.5 px-3 bg-port-card hover:bg-port-accent/10 border border-port-border hover:border-port-accent/40 text-xs font-medium text-gray-300 hover:text-white rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer"
           >
             <span>Ver Inventário Completo</span>
             <ArrowUpRight className="w-3.5 h-3.5" />
           </Link>
         </div>
 
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 };

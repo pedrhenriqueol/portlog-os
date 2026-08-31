@@ -8,7 +8,7 @@ export const api = axios.create({
   }
 });
 
-// Interceptor para injetar token do sessionStorage (fallback caso o navegador bloqueie 3rd-party cookies)
+// Interceptor para injetar token do sessionStorage
 api.interceptors.request.use((config) => {
   const token = sessionStorage.getItem('portlog_token');
   if (token) {
@@ -17,11 +17,76 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Interceptor global para tratamento de erros
+// Interceptor global para formatar mensagens de erro de forma amigável ao usuário
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    const message = error.response?.data?.message || 'Erro inesperado de comunicação com o servidor.';
-    return Promise.reject(new Error(message));
+    let friendlyMessage = 'Erro inesperado de comunicação com o servidor.';
+    
+    if (error.response?.data) {
+      const data = error.response.data;
+
+      // 1. Se for erro de validação do Zod (format / array de erros)
+      if (data.errors && typeof data.errors === 'object') {
+        const errorList: string[] = [];
+        
+        Object.entries(data.errors).forEach(([field, val]: [string, any]) => {
+          if (field === '_errors' && Array.isArray(val) && val.length > 0) {
+            errorList.push(...val);
+          } else if (val && typeof val === 'object' && Array.isArray(val._errors) && val._errors.length > 0) {
+            const fieldName = translateField(field);
+            errorList.push(`${fieldName}: ${val._errors.join(', ')}`);
+          }
+        });
+
+        if (errorList.length > 0) {
+          friendlyMessage = errorList.join(' • ');
+        } else if (data.message) {
+          friendlyMessage = data.message;
+        }
+      } 
+      // 2. Se tiver mensagem direta
+      else if (data.message && typeof data.message === 'string') {
+        // Se a mensagem contiver JSON puro (ex: stringified zod error)
+        if (data.message.startsWith('[') || data.message.startsWith('{')) {
+          try {
+            const parsed = JSON.parse(data.message);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              friendlyMessage = parsed.map((p: any) => `${translateField(p.path?.[0] || 'Campo')}: ${p.message}`).join(' • ');
+            } else {
+              friendlyMessage = 'Dados inválidos preenchidos no formulário.';
+            }
+          } catch {
+            friendlyMessage = 'Por favor, revise os dados preenchidos no formulário.';
+          }
+        } else {
+          friendlyMessage = data.message;
+        }
+      }
+    } else if (error.message) {
+      friendlyMessage = error.message;
+    }
+
+    return Promise.reject(new Error(friendlyMessage));
   }
 );
+
+function translateField(field: string): string {
+  const map: Record<string, string> = {
+    title: 'Título',
+    description: 'Descrição técnica',
+    assetId: 'Equipamento',
+    priority: 'Nível de prioridade',
+    type: 'Tipo de manutenção',
+    slaHours: 'Prazo de SLA',
+    code: 'Código patrimonial',
+    name: 'Nome do equipamento',
+    tenantSlug: 'Slug do terminal',
+    tenantName: 'Nome do terminal',
+    cnpj: 'CNPJ',
+    adminName: 'Nome do administrador',
+    email: 'E-mail',
+    password: 'Senha'
+  };
+  return map[field] || field;
+}

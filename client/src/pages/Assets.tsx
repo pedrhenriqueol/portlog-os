@@ -3,6 +3,7 @@ import { api } from '../api/client';
 import { Asset } from '../types';
 import { Layers, Plus, Search, MapPin, Gauge } from 'lucide-react';
 import { CreateAssetModal } from '../components/CreateAssetModal';
+import { motion } from 'framer-motion';
 
 export const Assets: React.FC = () => {
   const [assets, setAssets] = useState<Asset[]>([]);
@@ -32,7 +33,12 @@ export const Assets: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
+    <motion.div 
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      className="space-y-6 max-w-7xl mx-auto"
+    >
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -48,17 +54,19 @@ export const Assets: React.FC = () => {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Buscar por código ou nome..."
-              className="pl-9 pr-4 py-2 bg-port-card border border-port-border rounded-xl text-xs text-white placeholder-gray-500 focus:outline-none focus:border-port-accent transition-all w-64 font-mono"
+              className="pl-9 pr-4 py-2.5 bg-port-card border border-port-border rounded-xl text-xs text-white placeholder-gray-500 focus:outline-none focus:border-port-accent transition-all w-64 font-mono"
             />
           </div>
 
-          <button 
+          <motion.button 
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
             onClick={() => setIsModalOpen(true)}
-            className="py-2.5 px-4 bg-port-accent hover:bg-port-accentHover text-white font-medium rounded-xl transition-all shadow-lg shadow-port-accent/20 flex items-center gap-2 text-xs cursor-pointer"
+            className="py-2.5 px-4 bg-port-accent hover:bg-port-accentHover text-white font-medium rounded-xl transition-all shadow-lg shadow-port-accent/25 flex items-center gap-2 text-xs cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>Cadastrar Equipamento</span>
-          </button>
+          </motion.button>
         </div>
       </div>
 
@@ -70,9 +78,10 @@ export const Assets: React.FC = () => {
           </div>
         ) : (
           assets.map((asset) => (
-            <div 
+            <motion.div 
               key={asset.id}
-              className="p-5 rounded-2xl bg-port-card/70 border border-port-border hover:border-port-accent/50 transition-all shadow-lg flex flex-col justify-between group"
+              whileHover={{ y: -3, transition: { duration: 0.15 } }}
+              className="p-5 rounded-2xl bg-port-card/70 hover:bg-port-card/90 border border-port-border hover:border-port-accent/50 transition-all shadow-lg flex flex-col justify-between group"
             >
               <div>
                 {/* Card Header */}
@@ -124,7 +133,7 @@ export const Assets: React.FC = () => {
                   Ativo Registrado
                 </span>
               </div>
-            </div>
+            </motion.div>
           ))
         )}
       </div>
@@ -136,6 +145,6 @@ export const Assets: React.FC = () => {
         onSuccess={loadAssets}
         onSubmit={handleCreateAsset}
       />
-    </div>
+    </motion.div>
   );
 };
