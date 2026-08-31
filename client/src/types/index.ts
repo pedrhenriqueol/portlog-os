@@ -40,10 +40,14 @@ export interface User {
   name: string;
   email: string;
   role: Role;
+  active?: boolean;
   tenant: {
     id: string;
     name: string;
     slug: string;
+  };
+  _count?: {
+    assignedWOs: number;
   };
 }
 
@@ -70,6 +74,15 @@ export interface ChecklistItem {
   checkedAt?: string;
 }
 
+export interface PartItem {
+  id: string;
+  partName: string;
+  partCode: string;
+  quantity: number;
+  unitCost: number;
+  totalCost: number;
+}
+
 export interface WorkOrder {
   id: string;
   orderNumber: number;
@@ -81,6 +94,8 @@ export interface WorkOrder {
   slaDeadline: string;
   startedAt?: string;
   completedAt?: string;
+  costParts: number;
+  costLabor: number;
   asset: {
     id: string;
     code: string;
@@ -98,6 +113,7 @@ export interface WorkOrder {
     name: string;
   };
   checklists?: ChecklistItem[];
+  partsUsed?: PartItem[];
   _count?: {
     checklists: number;
     partsUsed: number;
@@ -113,4 +129,16 @@ export interface DashboardMetrics {
   criticalBerthWorkOrders: number;
   mttrHours: string;
   completedLast30Days: number;
+}
+
+export interface SensorReading {
+  assetId: string;
+  assetCode: string;
+  assetName: string;
+  temperature: number;
+  vibration: number;
+  hydraulicPressure: number;
+  healthScore: number;
+  status: 'NORMAL' | 'ALERTA' | 'CRITICO';
+  timestamp: string;
 }

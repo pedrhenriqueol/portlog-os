@@ -5,8 +5,10 @@ import { Layout } from './components/layout/Layout';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
 import { Dashboard } from './pages/Dashboard';
+import { Telemetry } from './pages/Telemetry';
 import { WorkOrders } from './pages/WorkOrders';
 import { Assets } from './pages/Assets';
+import { Team } from './pages/Team';
 import { Audit } from './pages/Audit';
 
 const ProtectedRoute: React.FC<{ children: React.ReactElement }> = ({ children }) => {
@@ -44,8 +46,10 @@ export default function App() {
             }
           >
             <Route index element={<Dashboard />} />
+            <Route path="telemetry" element={<Telemetry />} />
             <Route path="work-orders" element={<WorkOrders />} />
             <Route path="assets" element={<Assets />} />
+            <Route path="team" element={<Team />} />
             <Route path="audit" element={<Audit />} />
           </Route>
 
