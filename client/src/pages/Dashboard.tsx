@@ -171,22 +171,23 @@ export const Dashboard: React.FC = () => {
         <div className="p-6 bg-port-card/50 border border-port-border/80 rounded-2xl flex flex-col justify-between">
           <div>
             <h3 className="font-semibold text-white text-base mb-1">Status de Frotas de Berço</h3>
-            <p className="text-xs text-gray-400 mb-4">Equipamentos cadastrados no Supabase</p>
+            <p className="text-xs text-gray-400 mb-4">Equipamentos cadastrados no terminal</p>
 
             <div className="space-y-3">
               {assets.slice(0, 4).map((item) => (
-                <div key={item.id} className="p-3 rounded-xl bg-port-dark/60 border border-port-border/50 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-port-card flex items-center justify-center text-xs font-mono font-bold text-port-accent">
+                <div key={item.id} className="p-3 rounded-xl bg-port-dark/60 border border-port-border/50 flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-3 min-w-0">
+                    {/* Badge com largura flexível e auto-wrap prevention */}
+                    <div className="px-2.5 py-1.5 rounded-lg bg-port-card border border-port-border/80 flex items-center justify-center text-xs font-mono font-bold text-port-accent shrink-0 min-w-[56px] text-center">
                       {item.code}
                     </div>
-                    <div>
-                      <p className="text-xs font-medium text-white truncate max-w-[140px]">{item.name}</p>
-                      <span className="text-[10px] text-gray-400 font-mono">{item.locationBerth || 'Pátio'}</span>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-medium text-white truncate">{item.name}</p>
+                      <span className="text-[10px] text-gray-400 font-mono block truncate">{item.locationBerth || 'Pátio Principal'}</span>
                     </div>
                   </div>
 
-                  <span className={`text-[10px] font-mono font-semibold px-2 py-0.5 rounded border ${
+                  <span className={`text-[10px] font-mono font-semibold px-2 py-0.5 rounded border shrink-0 ${
                     item.status === 'OPERACIONAL'
                       ? 'bg-port-emerald/10 border-port-emerald/30 text-port-emerald'
                       : 'bg-port-amber/10 border-port-amber/30 text-port-amber'
@@ -200,7 +201,7 @@ export const Dashboard: React.FC = () => {
 
           <Link 
             to="/assets"
-            className="w-full mt-4 py-2.5 px-3 bg-port-card hover:bg-port-border/40 border border-port-border text-xs font-medium text-gray-300 rounded-xl transition-all flex items-center justify-center gap-1.5"
+            className="w-full mt-4 py-2.5 px-3 bg-port-card hover:bg-port-border/40 border border-port-border text-xs font-medium text-gray-300 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer"
           >
             <span>Ver Inventário Completo</span>
             <ArrowUpRight className="w-3.5 h-3.5" />

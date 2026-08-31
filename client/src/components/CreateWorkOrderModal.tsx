@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Asset, WOPriority, WOType } from '../types';
 import { X, Wrench, Plus, Clock, AlertTriangle, CheckSquare } from 'lucide-react';
 
@@ -17,7 +17,7 @@ export const CreateWorkOrderModal: React.FC<CreateWorkOrderModalProps> = ({
   assets,
   onSubmit
 }) => {
-  const [assetId, setAssetId] = useState(assets[0]?.id || '');
+  const [assetId, setAssetId] = useState('');
   const [type, setType] = useState<WOType>('CORRETIVA_URGENTE');
   const [priority, setPriority] = useState<WOPriority>('MEDIA');
   const [title, setTitle] = useState('');
@@ -27,12 +27,31 @@ export const CreateWorkOrderModal: React.FC<CreateWorkOrderModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // Garante que o assetId sempre seja inicializado com o ID do primeiro ativo disponível
+  useEffect(() => {
+    if (assets.length > 0 && (!assetId || !assets.find(a => a.id === assetId))) {
+      setAssetId(assets[0].id);
+    }
+  }, [assets, isOpen]);
+
   if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
+
+    if (!assetId) {
+      setError('Selecione um equipamento válido cadastrado.');
+      setLoading(false);
+      return;
+    }
+
+    if (description.trim().length < 10) {
+      setError('A descrição técnica deve conter no mínimo 10 caracteres explicativos.');
+      setLoading(false);
+      return;
+    }
 
     const checklists = checklistText
       .split('\n')
@@ -79,7 +98,7 @@ export const CreateWorkOrderModal: React.FC<CreateWorkOrderModalProps> = ({
 
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-port-border/40 transition-colors"
+            className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-port-border/40 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -94,7 +113,7 @@ export const CreateWorkOrderModal: React.FC<CreateWorkOrderModalProps> = ({
         {/* Form */}
         <form onSubmit={handleSubmit} className="mt-5 space-y-4 text-xs">
           
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block font-semibold text-gray-300 uppercase tracking-wider mb-1">
                 Equipamento Alvo *
@@ -130,7 +149,7 @@ export const CreateWorkOrderModal: React.FC<CreateWorkOrderModalProps> = ({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block font-semibold text-gray-300 uppercase tracking-wider mb-1">
                 Nível de Prioridade *
@@ -168,12 +187,12 @@ export const CreateWorkOrderModal: React.FC<CreateWorkOrderModalProps> = ({
 
           <div>
             <label className="block font-semibold text-gray-300 uppercase tracking-wider mb-1">
-              Título da Ocorrência / Sintoma *
+              Título da Ocorrência / Sintoma * (mín. 5 chars)
             </label>
             <input
               type="text"
               required
-              placeholder="Ex: Aquecimento excessivo na caixa redutora do STS-01"
+              placeholder="Ex: Aquecimento excessivo na caixa redutora do guindaste"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               className="w-full px-3 py-2 bg-port-darker border border-port-border rounded-xl text-white placeholder-gray-600 focus:outline-none focus:border-port-accent"
@@ -182,7 +201,7 @@ export const CreateWorkOrderModal: React.FC<CreateWorkOrderModalProps> = ({
 
           <div>
             <label className="block font-semibold text-gray-300 uppercase tracking-wider mb-1">
-              Descrição Técnica do Problema *
+              Descrição Técnica do Problema * (mín. 10 chars)
             </label>
             <textarea
               required
@@ -213,7 +232,7 @@ export const CreateWorkOrderModal: React.FC<CreateWorkOrderModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-xl text-gray-400 hover:text-white hover:bg-port-border/40 font-medium transition-colors"
+              className="px-4 py-2 rounded-xl text-gray-400 hover:text-white hover:bg-port-border/40 font-medium transition-colors cursor-pointer"
             >
               Cancelar
             </button>
@@ -221,7 +240,7 @@ export const CreateWorkOrderModal: React.FC<CreateWorkOrderModalProps> = ({
             <button
               type="submit"
               disabled={loading}
-              className="px-4 py-2 bg-port-accent hover:bg-port-accentHover text-white font-medium rounded-xl transition-all shadow-md shadow-port-accent/20 flex items-center gap-1.5 disabled:opacity-50"
+              className="px-4 py-2 bg-port-accent hover:bg-port-accentHover text-white font-medium rounded-xl transition-all shadow-md shadow-port-accent/20 flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
             >
               <Plus className="w-4 h-4" />
               <span>{loading ? 'Emitindo OS...' : 'Emitir Ordem de Serviço'}</span>
