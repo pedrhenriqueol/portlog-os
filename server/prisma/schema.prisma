@@ -1,0 +1,208 @@
+﻿datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  ADMIN_MASTER
+  SUPERVISOR_OPERACIONAL
+  TECNICO_MANUTENCAO
+  AUDITOR_QA
+}
+
+enum AssetCategory {
+  GUINDASTE_STS
+  GUINDASTE_RTG
+  REACH_STACKER
+  TERMINAL_TRACTOR
+  REBOCADOR_MARITIMO
+}
+
+enum AssetStatus {
+  OPERACIONAL
+  EM_MANUTENCAO
+  INOPERANTE_CRITICO
+  DESATIVADO
+}
+
+enum WOPriority {
+  BAIXA
+  MEDIA
+  ALTA
+  EMERGENCIAL_BERCO
+}
+
+enum WOStatus {
+  ABERTA
+  EM_TRIAGEM
+  APROVADA
+  EM_EXECUCAO
+  AGUARDANDO_PECA
+  VALIDACAO_QA
+  CONCLUIDA
+  CANCELADA
+}
+
+enum WOType {
+  PREVENTIVA_PROGRAMADA
+  CORRETIVA_URGENTE
+  PREDITIVA_SENSOR
+  INSPECAO_NORMATIVA
+}
+
+// ── 1. TENANTS (Terminais Portuários / ZPEs) ──
+model Tenant {
+  id          String       @id @default(uuid())
+  name        String       @db.VarChar(120)
+  slug        String       @unique @db.VarChar(60)
+  cnpj        String       @unique @db.VarChar(18)
+  active      Boolean      @default(true)
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+
+  users       User[]
+  assets      Asset[]
+  workOrders  WorkOrder[]
+  auditLogs   AuditLog[]
+
+  @@map("tenants")
+}
+
+// ── 2. USERS (Operadores, Supervisores e Técnicos) ──
+model User {
+  id           String       @id @default(uuid())
+  tenantId     String       @map("tenant_id")
+  name         String       @db.VarChar(100)
+  email        String       @db.VarChar(150)
+  passwordHash String       @map("password_hash")
+  role         Role         @default(TECNICO_MANUTENCAO)
+  active       Boolean      @default(true)
+  createdAt    DateTime     @default(now()) @map("created_at")
+  updatedAt    DateTime     @updatedAt @map("updated_at")
+
+  tenant       Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  assignedWOs  WorkOrder[]  @relation("AssignedTechnician")
+  createdWOs   WorkOrder[]  @relation("CreatorUser")
+  auditLogs    AuditLog[]
+
+  @@unique([tenantId, email])
+  @@index([tenantId, role])
+  @@map("users")
+}
+
+// ── 3. ASSETS (Frotas e Maquinário Portuário) ──
+model Asset {
+  id             String        @id @default(uuid())
+  tenantId       String        @map("tenant_id")
+  code           String        @db.VarChar(50)
+  name           String        @db.VarChar(120)
+  category       AssetCategory
+  status         AssetStatus   @default(OPERACIONAL)
+  locationBerth  String?       @map("location_berth") @db.VarChar(60)
+  hourMeter      Decimal       @default(0.0) @map("hour_meter") @db.Decimal(10, 2)
+  lastMaintenanceAt DateTime?  @map("last_maintenance_at")
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+
+  tenant         Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  workOrders     WorkOrder[]
+
+  @@unique([tenantId, code])
+  @@index([tenantId, status])
+  @@index([tenantId, category])
+  @@map("assets")
+}
+
+// ── 4. WORK ORDERS (Ordens de Serviço de Manutenção) ──
+model WorkOrder {
+  id              String         @id @default(uuid())
+  tenantId        String         @map("tenant_id")
+  orderNumber     Int            @map("order_number")
+  assetId         String         @map("asset_id")
+  type            WOType
+  priority        WOPriority     @default(MEDIA)
+  status          WOStatus       @default(ABERTA)
+  title           String         @db.VarChar(150)
+  description     String         @db.Text
+  slaDeadline     DateTime       @map("sla_deadline")
+  startedAt       DateTime?      @map("started_at")
+  completedAt     DateTime?      @map("completed_at")
+  costParts       Decimal        @default(0.00) @map("cost_parts") @db.Decimal(10, 2)
+  costLabor       Decimal        @default(0.00) @map("cost_labor") @db.Decimal(10, 2)
+  
+  assignedToId    String?        @map("assigned_to_id")
+  createdById     String         @map("created_by_id")
+  
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
+
+  tenant          Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  asset           Asset          @relation(fields: [assetId], references: [id], onDelete: Restrict)
+  assignedTo      User?          @relation("AssignedTechnician", fields: [assignedToId], references: [id], onDelete: SetNull)
+  createdBy       User           @relation("CreatorUser", fields: [createdById], references: [id], onDelete: Restrict)
+  
+  checklists      WOChecklist[]
+  partsUsed       WOPart[]
+
+  @@unique([tenantId, orderNumber])
+  @@index([tenantId, status])
+  @@index([tenantId, priority])
+  @@index([tenantId, assetId])
+  @@map("work_orders")
+}
+
+// ── 5. CHECKLISTS DE MANUTENÇÃO (Garantia de Qualidade / QA) ──
+model WOChecklist {
+  id           String     @id @default(uuid())
+  workOrderId  String     @map("work_order_id")
+  taskItem     String     @map("task_item") @db.VarChar(200)
+  completed    Boolean    @default(false)
+  measuredValue String?   @map("measured_value") @db.VarChar(50)
+  notes        String?    @db.Text
+  checkedAt    DateTime?  @map("checked_at")
+
+  workOrder    WorkOrder  @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+
+  @@index([workOrderId])
+  @@map("wo_checklists")
+}
+
+// ── 6. PEÇAS & COMPONENTES CONSUMIDOS ──
+model WOPart {
+  id           String     @id @default(uuid())
+  workOrderId  String     @map("work_order_id")
+  partName     String     @map("part_name") @db.VarChar(120)
+  partCode     String     @map("part_code") @db.VarChar(50)
+  quantity     Int        @default(1)
+  unitCost     Decimal    @map("unit_cost") @db.Decimal(10, 2)
+  totalCost    Decimal    @map("total_cost") @db.Decimal(10, 2)
+
+  workOrder    WorkOrder  @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+
+  @@index([workOrderId])
+  @@map("wo_parts")
+}
+
+// ── 7. AUDIT LOGS (Trilha de Auditoria e Conformidade) ──
+model AuditLog {
+  id           String     @id @default(uuid())
+  tenantId     String     @map("tenant_id")
+  userId       String?    @map("user_id")
+  action       String     @db.VarChar(50)
+  entity       String     @db.VarChar(50)
+  entityId     String     @map("entity_id")
+  details      Json
+  ipAddress    String?    @map("ip_address") @db.VarChar(45)
+  createdAt    DateTime   @default(now()) @map("created_at")
+
+  tenant       Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user         User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, entity, entityId])
+  @@index([tenantId, createdAt])
+  @@map("audit_logs")
+}
