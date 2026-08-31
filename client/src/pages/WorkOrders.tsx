@@ -1,41 +1,72 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '../api/client';
-import { WorkOrder } from '../types';
+import { WorkOrder, Asset, WOStatus } from '../types';
 import { 
   Wrench, 
   Plus, 
-  AlertTriangle, 
-  CheckCircle2, 
   Clock, 
   User, 
-  ChevronRight,
-  Filter
+  CheckCircle2,
+  AlertTriangle
 } from 'lucide-react';
+import { CreateWorkOrderModal } from '../components/CreateWorkOrderModal';
+import { WorkOrderDetailModal } from '../components/WorkOrderDetailModal';
 
 export const WorkOrders: React.FC = () => {
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
+  const [assets, setAssets] = useState<Asset[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filterPriority, setFilterPriority] = useState<string>('ALL');
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [selectedWO, setSelectedWO] = useState<WorkOrder | null>(null);
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const [woRes, assetsRes] = await Promise.all([
+        api.get('/work-orders'),
+        api.get('/assets')
+      ]);
+      setWorkOrders(woRes.data.workOrders);
+      setAssets(assetsRes.data.assets);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    async function loadWorkOrders() {
-      try {
-        const response = await api.get('/work-orders');
-        setWorkOrders(response.data.workOrders);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadWorkOrders();
+    loadData();
   }, []);
 
+  const handleCreateWorkOrder = async (data: any) => {
+    await api.post('/work-orders', data);
+    await loadData();
+  };
+
+  const handleUpdateStatus = async (id: string, status: WOStatus, notes?: string) => {
+    await api.patch(`/work-orders/${id}/status`, { status, notes });
+    await loadData();
+  };
+
+  const handleToggleChecklist = async (checklistId: string, completed: boolean) => {
+    await api.patch(`/work-orders/checklists/${checklistId}`, { completed });
+    await loadData();
+    if (selectedWO && selectedWO.checklists) {
+      setSelectedWO({
+        ...selectedWO,
+        checklists: selectedWO.checklists.map(c => 
+          c.id === checklistId ? { ...c, completed, checkedAt: completed ? new Date().toISOString() : undefined } : c
+        )
+      });
+    }
+  };
+
   const columns = [
-    { id: 'ABERTA', label: 'Abertas / Triagem', color: 'border-blue-500/40 bg-blue-500/5 text-blue-400' },
-    { id: 'EM_EXECUCAO', label: 'Em Execução Técnica', color: 'border-port-amber/40 bg-port-amber/5 text-port-amber' },
-    { id: 'AGUARDANDO_PECA', label: 'Aguardando Peça / Estoque', color: 'border-purple-500/40 bg-purple-500/5 text-purple-400' },
-    { id: 'CONCLUIDA', label: 'Concluídas & Aprovadas QA', color: 'border-port-emerald/40 bg-port-emerald/5 text-port-emerald' },
+    { id: 'ABERTA', label: 'Abertas / Triagem', color: 'text-blue-400' },
+    { id: 'EM_EXECUCAO', label: 'Em Execução Técnica', color: 'text-port-amber' },
+    { id: 'AGUARDANDO_PECA', label: 'Aguardando Peça / Estoque', color: 'text-purple-400' },
+    { id: 'CONCLUIDA', label: 'Concluídas & Aprovadas QA', color: 'text-port-emerald' },
   ];
 
   return (
@@ -44,11 +75,14 @@ export const WorkOrders: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-white tracking-tight">Ordens de Serviço de Manutenção</h1>
-          <p className="text-sm text-gray-400 mt-0.5">Fluxo de triagem, execução em campo e validação de qualidade.</p>
+          <p className="text-sm text-gray-400 mt-0.5">Fluxo de triagem, execução em campo e validação de conformidade.</p>
         </div>
 
         <div className="flex items-center gap-3">
-          <button className="py-2.5 px-4 bg-port-accent hover:bg-port-accentHover text-white font-medium rounded-xl transition-all shadow-lg shadow-port-accent/20 flex items-center gap-2 text-sm">
+          <button 
+            onClick={() => setIsCreateModalOpen(true)}
+            className="py-2.5 px-4 bg-port-accent hover:bg-port-accentHover text-white font-medium rounded-xl transition-all shadow-lg shadow-port-accent/20 flex items-center gap-2 text-sm cursor-pointer"
+          >
             <Plus className="w-4 h-4" />
             <span>Abrir Nova OS</span>
           </button>
@@ -69,7 +103,7 @@ export const WorkOrders: React.FC = () => {
               {/* Column Header */}
               <div className="flex items-center justify-between pb-3 border-b border-port-border/50 mb-3">
                 <span className="text-xs font-bold text-gray-300 flex items-center gap-2">
-                  <span className={`w-2 h-2 rounded-full ${col.color.split(' ')[2]}`} />
+                  <span className={`w-2 h-2 rounded-full ${col.color.replace('text-', 'bg-')}`} />
                   {col.label}
                 </span>
                 <span className="text-xs font-mono font-semibold px-2 py-0.5 rounded bg-port-dark/80 text-gray-400 border border-port-border/40">
@@ -87,6 +121,7 @@ export const WorkOrders: React.FC = () => {
                   ordersInCol.map((wo) => (
                     <div 
                       key={wo.id}
+                      onClick={() => setSelectedWO(wo)}
                       className="p-4 rounded-xl bg-port-card border border-port-border/80 hover:border-port-accent/50 transition-all shadow-md group cursor-pointer"
                     >
                       {/* Priority and Order Number */}
@@ -123,7 +158,7 @@ export const WorkOrders: React.FC = () => {
                         </span>
                         <span className="flex items-center gap-1 text-gray-400">
                           <User className="w-3 h-3" />
-                          {wo.assignedTo ? wo.assignedTo.name.split(' ')[0] : 'Não atribuído'}
+                          {wo.assignedTo ? wo.assignedTo.name.split(' ')[0] : 'Supervisor'}
                         </span>
                       </div>
                     </div>
@@ -135,6 +170,24 @@ export const WorkOrders: React.FC = () => {
           );
         })}
       </div>
+
+      {/* Modal de Criação de OS */}
+      <CreateWorkOrderModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSuccess={loadData}
+        assets={assets}
+        onSubmit={handleCreateWorkOrder}
+      />
+
+      {/* Modal de Detalhes & QA da OS */}
+      <WorkOrderDetailModal
+        workOrder={selectedWO}
+        isOpen={!!selectedWO}
+        onClose={() => setSelectedWO(null)}
+        onUpdateStatus={handleUpdateStatus}
+        onToggleChecklist={handleToggleChecklist}
+      />
     </div>
   );
 };
