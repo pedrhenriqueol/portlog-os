@@ -10,7 +10,14 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev"
   },
-  "keywords": ["fastify", "prisma", "postgresql", "portlog", "rbac", "multi-tenant"],
+  "keywords": [
+    "fastify",
+    "prisma",
+    "postgresql",
+    "portlog",
+    "rbac",
+    "multi-tenant"
+  ],
   "author": "Pedro Henrique",
   "license": "MIT",
   "dependencies": {
@@ -23,14 +30,14 @@
     "bcryptjs": "^2.4.3",
     "dotenv": "^16.4.5",
     "fastify": "^4.28.1",
+    "prisma": "^5.19.1",
+    "tsup": "^8.2.4",
+    "tsx": "^4.16.2",
+    "typescript": "^5.5.3",
     "zod": "^3.23.8"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
-    "@types/node": "^20.14.9",
-    "prisma": "^5.19.1",
-    "tsup": "^8.2.4",
-    "tsx": "^4.16.2",
-    "typescript": "^5.5.3"
+    "@types/node": "^20.14.9"
   }
 }
