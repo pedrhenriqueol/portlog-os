@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Ship, ShieldCheck, AlertCircle, ArrowRight, Lock, Mail, Building } from 'lucide-react';
 
 export const Login: React.FC = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
-  const [tenantSlug, setTenantSlug] = useState('mucuripe-port');
-  const [email, setEmail] = useState('admin@mucuripe.com');
-  const [password, setPassword] = useState('pedrooliveira1227!');
+  const [tenantSlug, setTenantSlug] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -17,13 +17,19 @@ export const Login: React.FC = () => {
     setLoading(true);
     setError('');
     try {
-      await login(tenantSlug, email, password);
+      await login(tenantSlug.trim(), email.trim(), password);
       navigate('/', { replace: true });
     } catch (err: any) {
       setError(err.message || 'Falha ao autenticar.');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleFillDemo = () => {
+    setTenantSlug('mucuripe-port');
+    setEmail('admin@mucuripe.com');
+    setPassword('pedrooliveira1227!');
   };
 
   return (
@@ -35,7 +41,7 @@ export const Login: React.FC = () => {
       <div className="w-full max-w-md bg-port-card/90 backdrop-blur-xl border border-port-border/80 rounded-2xl p-8 shadow-2xl relative z-10">
         
         {/* Brand Header */}
-        <div className="flex flex-col items-center text-center mb-8">
+        <div className="flex flex-col items-center text-center mb-6">
           <div className="w-14 h-14 rounded-xl bg-port-accent/20 border border-port-accent/40 flex items-center justify-center text-port-accent mb-3 shadow-lg shadow-port-accent/10">
             <Ship className="w-8 h-8" />
           </div>
@@ -64,7 +70,7 @@ export const Login: React.FC = () => {
                 required
                 value={tenantSlug}
                 onChange={(e) => setTenantSlug(e.target.value)}
-                placeholder="ex: mucuripe-port"
+                placeholder="ex: mucuripe-port, santos-port"
                 className="w-full pl-11 pr-4 py-2.5 bg-port-darker/80 border border-port-border rounded-xl text-white placeholder-gray-600 focus:outline-none focus:border-port-accent focus:ring-1 focus:ring-port-accent transition-all text-sm font-mono"
               />
             </div>
@@ -119,6 +125,24 @@ export const Login: React.FC = () => {
             )}
           </button>
         </form>
+
+        {/* Demo Account Helper Button */}
+        <div className="mt-4 flex items-center justify-between text-xs">
+          <button
+            type="button"
+            onClick={handleFillDemo}
+            className="text-gray-400 hover:text-port-accent transition-colors underline cursor-pointer"
+          >
+            Preencher Conta Demo
+          </button>
+
+          <Link
+            to="/register"
+            className="text-port-emerald hover:underline font-medium"
+          >
+            Criar Novo Terminal ➔
+          </Link>
+        </div>
 
         <div className="mt-8 pt-6 border-t border-port-border/50 flex items-center justify-center gap-2 text-xs text-gray-500">
           <ShieldCheck className="w-4 h-4 text-port-emerald" />
