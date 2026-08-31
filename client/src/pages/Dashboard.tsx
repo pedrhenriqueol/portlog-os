@@ -8,17 +8,23 @@ import {
   CheckCircle2, 
   ArrowUpRight,
   TrendingUp,
-  Ship,
-  Sparkles
+  Sparkles,
+  Loader2
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip } from 'recharts';
 import { motion } from 'framer-motion';
 
 export const Dashboard: React.FC = () => {
-  const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
-  const [assets, setAssets] = useState<Asset[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [metrics, setMetrics] = useState<DashboardMetrics | null>(() => {
+    const cached = sessionStorage.getItem('portlog_cached_metrics');
+    return cached ? JSON.parse(cached) : null;
+  });
+  const [assets, setAssets] = useState<Asset[]>(() => {
+    const cached = sessionStorage.getItem('portlog_cached_assets');
+    return cached ? JSON.parse(cached) : [];
+  });
+  const [loading, setLoading] = useState(!metrics);
 
   useEffect(() => {
     async function loadDashboardData() {
@@ -29,6 +35,8 @@ export const Dashboard: React.FC = () => {
         ]);
         setMetrics(metricsRes.data.metrics);
         setAssets(assetsRes.data.assets);
+        sessionStorage.setItem('portlog_cached_metrics', JSON.stringify(metricsRes.data.metrics));
+        sessionStorage.setItem('portlog_cached_assets', JSON.stringify(assetsRes.data.assets));
       } catch (err) {
         console.error(err);
       } finally {
@@ -94,15 +102,25 @@ export const Dashboard: React.FC = () => {
             </div>
           </div>
           <div className="mt-4 flex items-baseline gap-2">
-            <span className="text-3xl font-bold text-white tracking-tight">
-              {metrics ? metrics.availabilityRate : '100%'}
-            </span>
-            <span className="text-xs text-port-emerald flex items-center font-medium">
-              <TrendingUp className="w-3 h-3 mr-0.5" /> +1.2%
-            </span>
+            {loading && !metrics ? (
+              <div className="h-9 w-24 bg-port-border/60 animate-pulse rounded-lg" />
+            ) : (
+              <>
+                <span className="text-3xl font-bold text-white tracking-tight">
+                  {metrics?.availabilityRate || '0.0%'}
+                </span>
+                <span className="text-xs text-port-emerald flex items-center font-medium">
+                  <TrendingUp className="w-3 h-3 mr-0.5" /> +1.2%
+                </span>
+              </>
+            )}
           </div>
           <p className="text-[11px] text-gray-500 mt-1 font-mono">
-            {metrics?.operationalAssets || 0} de {metrics?.totalAssets || 0} equipamentos ativos
+            {loading && !metrics ? (
+              <span className="inline-block h-3 w-32 bg-port-border/40 animate-pulse rounded mt-1" />
+            ) : (
+              `${metrics?.operationalAssets || 0} de ${metrics?.totalAssets || 0} equipamentos ativos`
+            )}
           </p>
         </div>
 
@@ -115,12 +133,24 @@ export const Dashboard: React.FC = () => {
             </div>
           </div>
           <div className="mt-4 flex items-baseline gap-2">
-            <span className="text-3xl font-bold text-port-rose tracking-tight">
-              {metrics ? metrics.criticalBerthWorkOrders : 0}
-            </span>
-            <span className="text-xs text-gray-400 font-mono">Risco Demurrage</span>
+            {loading && !metrics ? (
+              <div className="h-9 w-16 bg-port-border/60 animate-pulse rounded-lg" />
+            ) : (
+              <>
+                <span className="text-3xl font-bold text-port-rose tracking-tight">
+                  {metrics?.criticalBerthWorkOrders || 0}
+                </span>
+                <span className="text-xs text-gray-400 font-mono">Risco Demurrage</span>
+              </>
+            )}
           </div>
-          <p className="text-[11px] text-gray-500 mt-1 font-mono">Paradas com impacto na atracação</p>
+          <p className="text-[11px] text-gray-500 mt-1 font-mono">
+            {loading && !metrics ? (
+              <span className="inline-block h-3 w-36 bg-port-border/40 animate-pulse rounded mt-1" />
+            ) : (
+              'Paradas com impacto na atracação'
+            )}
+          </p>
         </div>
 
         {/* Tempo Médio de Reparo (MTTR) */}
@@ -132,14 +162,26 @@ export const Dashboard: React.FC = () => {
             </div>
           </div>
           <div className="mt-4 flex items-baseline gap-2">
-            <span className="text-3xl font-bold text-white tracking-tight">
-              {metrics ? metrics.mttrHours : '0.0h'}
-            </span>
-            <span className="text-xs text-port-emerald flex items-center font-medium">
-              Concluídas
-            </span>
+            {loading && !metrics ? (
+              <div className="h-9 w-20 bg-port-border/60 animate-pulse rounded-lg" />
+            ) : (
+              <>
+                <span className="text-3xl font-bold text-white tracking-tight">
+                  {metrics?.mttrHours || '0.0h'}
+                </span>
+                <span className="text-xs text-port-emerald flex items-center font-medium">
+                  Concluídas
+                </span>
+              </>
+            )}
           </div>
-          <p className="text-[11px] text-gray-500 mt-1 font-mono">Tempo médio de intervenção</p>
+          <p className="text-[11px] text-gray-500 mt-1 font-mono">
+            {loading && !metrics ? (
+              <span className="inline-block h-3 w-32 bg-port-border/40 animate-pulse rounded mt-1" />
+            ) : (
+              'Tempo médio de intervenção'
+            )}
+          </p>
         </div>
 
         {/* Cumprimento de SLA */}
@@ -151,12 +193,24 @@ export const Dashboard: React.FC = () => {
             </div>
           </div>
           <div className="mt-4 flex items-baseline gap-2">
-            <span className="text-3xl font-bold text-port-amber tracking-tight">
-              {metrics ? metrics.slaBreachedWorkOrders : 0}
-            </span>
-            <span className="text-xs text-gray-400 font-mono">de {metrics?.totalActiveWorkOrders || 0} ativas</span>
+            {loading && !metrics ? (
+              <div className="h-9 w-16 bg-port-border/60 animate-pulse rounded-lg" />
+            ) : (
+              <>
+                <span className="text-3xl font-bold text-port-amber tracking-tight">
+                  {metrics?.slaBreachedWorkOrders || 0}
+                </span>
+                <span className="text-xs text-gray-400 font-mono">de {metrics?.totalActiveWorkOrders || 0} ativas</span>
+              </>
+            )}
           </div>
-          <p className="text-[11px] text-gray-500 mt-1 font-mono">Controle de pontualidade técnica</p>
+          <p className="text-[11px] text-gray-500 mt-1 font-mono">
+            {loading && !metrics ? (
+              <span className="inline-block h-3 w-36 bg-port-border/40 animate-pulse rounded mt-1" />
+            ) : (
+              'Controle de pontualidade técnica'
+            )}
+          </p>
         </div>
 
       </motion.div>
@@ -204,7 +258,22 @@ export const Dashboard: React.FC = () => {
             <p className="text-xs text-gray-400 mb-4">Equipamentos cadastrados no terminal</p>
 
             <div className="space-y-3">
-              {assets.length === 0 && !loading ? (
+              {loading && assets.length === 0 ? (
+                <div className="space-y-3">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="p-3 rounded-xl bg-port-dark/40 border border-port-border/40 flex items-center justify-between animate-pulse">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-7 bg-port-border/60 rounded-lg" />
+                        <div className="space-y-1">
+                          <div className="w-24 h-3 bg-port-border/60 rounded" />
+                          <div className="w-16 h-2 bg-port-border/40 rounded" />
+                        </div>
+                      </div>
+                      <div className="w-14 h-5 bg-port-border/60 rounded" />
+                    </div>
+                  ))}
+                </div>
+              ) : assets.length === 0 ? (
                 <p className="text-xs text-gray-500 italic p-4 text-center">Nenhum equipamento cadastrado ainda.</p>
               ) : (
                 assets.slice(0, 4).map((item) => (
