@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Ship, ShieldCheck, AlertCircle, ArrowRight, Lock, Mail, Building } from 'lucide-react';
 
 export const Login: React.FC = () => {
   const { login } = useAuth();
+  const navigate = useNavigate();
   const [tenantSlug, setTenantSlug] = useState('mucuripe-port');
   const [email, setEmail] = useState('admin@mucuripe.com');
   const [password, setPassword] = useState('pedrooliveira1227!');
@@ -16,6 +18,7 @@ export const Login: React.FC = () => {
     setError('');
     try {
       await login(tenantSlug, email, password);
+      navigate('/', { replace: true });
     } catch (err: any) {
       setError(err.message || 'Falha ao autenticar.');
     } finally {

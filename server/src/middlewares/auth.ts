@@ -1,53 +1,26 @@
-﻿import { FastifyRequest, FastifyReply } from 'fastify';
+import { FastifyRequest, FastifyReply } from 'fastify';
 import { AppError } from '../shared/errors/AppError.js';
 
-export interface UserPayload {
-  sub: string;      // userId (UUID)
-  tenantId: string; // tenantId (UUID)
-  role: 'ADMIN_MASTER' | 'SUPERVISOR_OPERACIONAL' | 'TECNICO_MANUTENCAO' | 'AUDITOR_QA';
-}
-
-declare module 'fastify' {
-  interface FastifyRequest {
-    user: UserPayload;
-  }
-}
-
-/**
- * Middleware que intercepta o token JWT do cookie seguro HttpOnly ou Bearer header
- * e anexa as credenciais e o tenantId exclusivamente validados pelo servidor.
- */
 export async function authenticate(request: FastifyRequest, reply: FastifyReply) {
   try {
-    // 1. Tenta ler do cookie assinado HttpOnly ou fallback para Header
-    const token = request.cookies.access_token || request.headers.authorization?.replace('Bearer ', '');
-
-    if (!token) {
-      throw new AppError('Não autenticado. Token de acesso ausente.', 401);
+    // 1. Tenta autenticar por Cookie HttpOnly OU por Bearer Header (para máxima compatibilidade cross-domain)
+    const authHeader = request.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      await request.jwtVerify();
+    } else {
+      await request.jwtVerify({ onlyCookie: true });
     }
-
-    const decoded = await request.jwtVerify<UserPayload>();
-    request.user = decoded;
   } catch (err) {
-    throw new AppError('Sessão expirada ou token inválido.', 401);
+    throw new AppError('Sessão expirada ou não autenticada. Faça login novamente.', 401);
   }
 }
 
-/**
- * Middleware RBAC Server-Side: Valida se a role do usuário no token
- * possui permissão estrita para executar a operação.
- */
-export function authorize(allowedRoles: Array<UserPayload['role']>) {
+export function authorize(allowedRoles: string[]) {
   return async (request: FastifyRequest, reply: FastifyReply) => {
-    if (!request.user) {
-      throw new AppError('Usuário não autenticado.', 401);
-    }
-
-    if (!allowedRoles.includes(request.user.role)) {
-      throw new AppError(
-        `Acesso negado. Seu perfil (${request.user.role}) não possui permissão para esta ação.`,
-        403
-      );
+    const { role } = request.user;
+    
+    if (!allowedRoles.includes(role)) {
+      throw new AppError('Acesso não autorizado para o seu perfil operacional.', 403);
     }
   };
 }

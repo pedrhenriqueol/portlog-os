@@ -1,4 +1,4 @@
-﻿import { FastifyInstance } from 'fastify';
+import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import bcrypt from 'bcryptjs';
 import { prisma } from '../../shared/prisma.js';
@@ -61,7 +61,7 @@ export async function authRoutes(app: FastifyInstance) {
     });
   });
 
-  // ── 2. LOGIN COM COOKIE HTTPONLY SEGURO ──
+  // ── 2. LOGIN COM COOKIE HTTPONLY SEGURO (CROSS-SITE COMPATIBLE) ──
   app.post('/login', async (request, reply) => {
     const loginSchema = z.object({
       tenantSlug: z.string(),
@@ -100,16 +100,17 @@ export async function authRoutes(app: FastifyInstance) {
       { sub: user.id, expiresIn: env.JWT_EXPIRES_IN }
     );
 
-    // Salva o token em cookie HttpOnly com flags estritas de segurança
+    // Salva o token em cookie com SameSite=None e Secure=true para compatibilidade cross-origin Vercel <-> Render
     reply.setCookie('access_token', token, {
       path: '/',
-      secure: env.NODE_ENV === 'production',
+      secure: true,
       httpOnly: true,
-      sameSite: 'strict',
+      sameSite: 'none',
       maxAge: 60 * 60 * 24 // 1 dia
     });
 
     return reply.send({
+      token,
       user: {
         id: user.id,
         name: user.name,
@@ -144,7 +145,7 @@ export async function authRoutes(app: FastifyInstance) {
 
   // ── 4. LOGOUT SEGURO (LIMPA COOKIE) ──
   app.post('/logout', async (request, reply) => {
-    reply.clearCookie('access_token', { path: '/' });
+    reply.clearCookie('access_token', { path: '/', sameSite: 'none', secure: true });
     return reply.send({ message: 'Logout efetuado com sucesso.' });
   });
 }
