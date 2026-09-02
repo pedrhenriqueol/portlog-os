@@ -4,22 +4,22 @@
 
 @layer base {
   body {
-    @apply bg-port-darker text-gray-100;
+    @apply bg-[#0A0E17] text-slate-100 font-sans antialiased selection:bg-blue-600/30 selection:text-blue-200;
   }
 }
 
-/* Scrollbar estilizada marítima */
+/* Scrollbar estilizada marítima industrial */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #0B0F19;
+  background: #0A0E17;
 }
 ::-webkit-scrollbar-thumb {
-  background: #1F2937;
+  background: #1E293B;
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #0284C7;
+  background: #2563EB;
 }

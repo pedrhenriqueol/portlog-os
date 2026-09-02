@@ -9,19 +9,24 @@ export default {
     extend: {
       colors: {
         port: {
-          darker: '#0B0F19',
-          dark: '#111827',
-          card: '#1F2937',
-          border: '#374151',
-          accent: '#0284C7',     // Sky Blue marítimo
-          accentHover: '#0369A1',
-          amber: '#F59E0B',      // Alerta / Standby
-          emerald: '#10B981',    // Operacional
-          rose: '#EF4444',       // Crítico / Emergencial Berço
+          darker: '#0A0E17',      // Deep Steel Navy base
+          dark: '#0D131F',        // Sidebar & Elevated Containers
+          card: '#131B2E',        // Slate metallic surface card
+          cardHover: '#18233C',
+          border: '#1E293B',      // Precision Slate metallic border
+          borderLight: '#334155',
+          cobalt: '#2563EB',      // Azul Cobalto (Primary Action)
+          cobaltHover: '#1D4ED8',
+          accent: '#2563EB',      // Primary Accent (Cobalt)
+          accentHover: '#1D4ED8',
+          amber: '#F59E0B',       // Âmbar Operacional (Alertas/SLA)
+          nautical: '#F97316',    // Laranja Náutico (Emergencial Berço)
+          emerald: '#10B981',     // Verde Operacional (Online/Concluído)
+          rose: '#EF4444',        // Crítico
         }
       },
       fontFamily: {
-        sans: ['Outfit', 'Inter', 'sans-serif'],
+        sans: ['Inter', 'Outfit', 'sans-serif'],
         mono: ['JetBrains Mono', 'monospace'],
       }
     },
