@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- Fundo Deep Steel Navy com cantos arredondados -->
+  <rect width="64" height="64" rx="16" fill="#0A0E17"/>
+  <rect x="0.5" y="0.5" width="63" height="63" rx="15.5" stroke="#1E293B" stroke-width="1"/>
+  
+  <!-- Brilho radial sutil em Azul Cobalto -->
+  <circle cx="32" cy="32" r="26" fill="url(#cobaltGlow)" opacity="0.45"/>
+  
+  <!-- Casco do Navio / Terminal Portuário -->
+  <!-- Linha d'água -->
+  <path d="M12 48C18 46 26 46 32 48C38 50 46 50 52 48" stroke="#2563EB" stroke-width="2" stroke-linecap="round"/>
+  
+  <!-- Casco principal do navio porta-contêineres -->
+  <path d="M14 42L18 34H46L50 42C45 44 38 44 32 42C26 40 19 40 14 42Z" 
+        fill="url(#shipHullGradient)" 
+        stroke="#3B82F6" 
+        stroke-width="1.5" 
+        stroke-linejoin="round"/>
+        
+  <!-- Superestrutura / Ponte de Comando -->
+  <rect x="36" y="22" width="10" height="12" rx="2" fill="#1E293B" stroke="#60A5FA" stroke-width="1.5"/>
+  <line x1="38" y1="26" x2="44" y2="26" stroke="#93C5FD" stroke-width="1.5" stroke-linecap="round"/>
+  
+  <!-- Pilha de Contêineres de Carga -->
+  <rect x="20" y="26" width="14" height="8" rx="1.5" fill="#2563EB" stroke="#60A5FA" stroke-width="1.2"/>
+  <rect x="22" y="18" width="11" height="8" rx="1.5" fill="#F97316" stroke="#FDBA74" stroke-width="1.2"/>
+  
+  <!-- Farol / Ponto de Telemetria Operacional Ativa -->
+  <circle cx="41" cy="18" r="2.5" fill="#10B981"/>
+  <circle cx="41" cy="18" r="4.5" stroke="#10B981" stroke-width="1" opacity="0.6"/>
+
+  <!-- Definições de Gradientes -->
+  <defs>
+    <radialGradient id="cobaltGlow" cx="0.5" cy="0.5" r="0.5" fx="0.5" fy="0.5">
+      <stop offset="0%" stop-color="#2563EB" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#0A0E17" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="shipHullGradient" x1="14" y1="34" x2="50" y2="44" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#1D4ED8"/>
+      <stop offset="100%" stop-color="#0D1B36"/>
+    </linearGradient>
+  </defs>
+</svg>

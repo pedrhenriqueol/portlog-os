@@ -1,7 +1,16 @@
 import axios from 'axios';
 
+// Normalização resiliente da baseURL da API (compatível com localhost, Render, Vercel)
+const rawBaseURL = import.meta.env.VITE_API_URL || 'http://localhost:3333/api/v1';
+const cleanBase = rawBaseURL.replace(/\/+$/, '');
+const baseURL = cleanBase.includes('/api/v1')
+  ? cleanBase
+  : cleanBase.includes('/api')
+    ? `${cleanBase}/v1`
+    : `${cleanBase}/api/v1`;
+
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3333/api/v1',
+  baseURL,
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json'
