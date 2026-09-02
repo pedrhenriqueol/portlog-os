@@ -9,7 +9,11 @@ import {
   CheckCircle2,
   AlertTriangle,
   Layers,
-  Filter
+  Filter,
+  Play,
+  Pause,
+  ArrowRight,
+  ShieldCheck
 } from 'lucide-react';
 import { CreateWorkOrderModal } from '../components/CreateWorkOrderModal';
 import { WorkOrderDetailModal } from '../components/WorkOrderDetailModal';
@@ -21,6 +25,7 @@ export const WorkOrders: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedWO, setSelectedWO] = useState<WorkOrder | null>(null);
+  const [transitioningId, setTransitioningId] = useState<string | null>(null);
 
   const loadData = async () => {
     try {
@@ -47,9 +52,26 @@ export const WorkOrders: React.FC = () => {
     await loadData();
   };
 
+  // Movimentação de status com atualização otimista e persistência no backend
   const handleUpdateStatus = async (id: string, status: WOStatus, notes?: string) => {
-    await api.patch(`/work-orders/${id}/status`, { status, notes });
-    await loadData();
+    setTransitioningId(id);
+    
+    // Atualização otimista
+    setWorkOrders(prev => prev.map(wo => wo.id === id ? { ...wo, status } : wo));
+    if (selectedWO && selectedWO.id === id) {
+      setSelectedWO({ ...selectedWO, status });
+    }
+
+    try {
+      await api.patch(`/work-orders/${id}/status`, { status, notes });
+      await loadData();
+    } catch (err: any) {
+      console.error('Erro ao transicionar status:', err);
+      // Recarrega o estado real do servidor em caso de falha de validação/permissão
+      await loadData();
+    } finally {
+      setTransitioningId(null);
+    }
   };
 
   const handleToggleChecklist = async (checklistId: string, completed: boolean) => {
@@ -145,7 +167,7 @@ export const WorkOrders: React.FC = () => {
         <div>
           <h1 className="text-2xl font-bold text-white tracking-tight">Ordens de Serviço de Manutenção</h1>
           <p className="text-sm text-slate-400 mt-0.5">
-            Fluxo Kanban de triagem técnica, execução em berço e conformidade operacional.
+            Fluxo Kanban interativo de triagem técnica, execução em berço e conformidade operacional.
           </p>
         </div>
 
@@ -162,11 +184,12 @@ export const WorkOrders: React.FC = () => {
         </div>
       </div>
 
-      {/* Kanban Board Industrial */}
+      {/* Kanban Board Industrial Interativo */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 items-start">
         {columns.map((col) => {
           const ordersInCol = workOrders.filter(wo => {
             if (col.id === 'ABERTA') return ['ABERTA', 'EM_TRIAGEM', 'APROVADA'].includes(wo.status);
+            if (col.id === 'CONCLUIDA') return ['CONCLUIDA', 'VALIDACAO_QA'].includes(wo.status);
             return wo.status === col.id;
           });
 
@@ -191,43 +214,107 @@ export const WorkOrders: React.FC = () => {
                     Sem ordens nesta fase
                   </div>
                 ) : (
-                  ordersInCol.map((wo) => (
-                    <motion.div 
-                      key={wo.id}
-                      whileHover={{ y: -2, transition: { duration: 0.15 } }}
-                      onClick={() => setSelectedWO(wo)}
-                      className="p-4 rounded-xl bg-port-dark/90 border border-port-border hover:border-slate-700 transition-all shadow-sm group cursor-pointer"
-                    >
-                      {/* Top Bar: Order Code & Priority Badge */}
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-[11px] font-mono text-port-cobalt font-bold">
-                          #{wo.orderNumber}
-                        </span>
-                        {renderPriorityBadge(wo.priority, wo.type)}
-                      </div>
+                  ordersInCol.map((wo) => {
+                    const isTransitioning = transitioningId === wo.id;
 
-                      {/* Title */}
-                      <h4 className="text-sm font-semibold text-white leading-snug mb-1 group-hover:text-blue-400 transition-colors">
-                        {wo.title}
-                      </h4>
-
-                      {/* Asset Details Monospaced */}
-                      <p className="text-xs text-slate-400 font-mono mb-3">
-                        <span className="text-slate-300 font-semibold">{wo.asset.code}</span> • {wo.asset.locationBerth || 'Pátio Geral'}
-                      </p>
-
-                      {/* Footer Info with SLA Timer */}
-                      <div className="pt-3 border-t border-port-border/70 flex items-center justify-between gap-1 text-[11px] text-slate-400">
-                        <div>
-                          {renderSlaStatus(wo.slaDeadline)}
+                    return (
+                      <motion.div 
+                        key={wo.id}
+                        whileHover={{ y: -2, transition: { duration: 0.15 } }}
+                        onClick={() => setSelectedWO(wo)}
+                        className={`p-4 rounded-xl bg-port-dark/90 border border-port-border hover:border-slate-700 transition-all shadow-sm group cursor-pointer relative ${
+                          isTransitioning ? 'opacity-60 pointer-events-none' : ''
+                        }`}
+                      >
+                        {/* Top Bar: Order Code & Priority Badge */}
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-[11px] font-mono text-port-cobalt font-bold">
+                            #{wo.orderNumber}
+                          </span>
+                          {renderPriorityBadge(wo.priority, wo.type)}
                         </div>
-                        <span className="flex items-center gap-1 text-slate-400 font-mono text-[10px] shrink-0">
-                          <User className="w-3 h-3 text-slate-500" />
-                          {wo.assignedTo ? wo.assignedTo.name.split(' ')[0] : 'Supervisor'}
-                        </span>
-                      </div>
-                    </motion.div>
-                  ))
+
+                        {/* Title */}
+                        <h4 className="text-sm font-semibold text-white leading-snug mb-1 group-hover:text-blue-400 transition-colors">
+                          {wo.title}
+                        </h4>
+
+                        {/* Asset Details Monospaced */}
+                        <p className="text-xs text-slate-400 font-mono mb-3">
+                          <span className="text-slate-300 font-semibold">{wo.asset.code}</span> • {wo.asset.locationBerth || 'Pátio Geral'}
+                        </p>
+
+                        {/* Footer Info with SLA Timer */}
+                        <div className="pt-3 border-t border-port-border/70 flex items-center justify-between gap-1 text-[11px] text-slate-400 mb-3">
+                          <div>
+                            {renderSlaStatus(wo.slaDeadline)}
+                          </div>
+                          <span className="flex items-center gap-1 text-slate-400 font-mono text-[10px] shrink-0">
+                            <User className="w-3 h-3 text-slate-500" />
+                            {wo.assignedTo ? wo.assignedTo.name.split(' ')[0] : 'Supervisor'}
+                          </span>
+                        </div>
+
+                        {/* Controles Diretos de Transição de Fase (Kanban Interativo) */}
+                        <div className="pt-2 border-t border-port-border/40 flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                          
+                          {/* 1. Em Triagem / Aberta ➔ Iniciar Execução */}
+                          {['ABERTA', 'EM_TRIAGEM', 'APROVADA'].includes(wo.status) && (
+                            <button
+                              onClick={() => handleUpdateStatus(wo.id, 'EM_EXECUCAO', 'Início de execução técnica registrado pelo Kanban')}
+                              className="w-full py-1.5 px-2.5 bg-port-cobalt/15 hover:bg-port-cobalt/25 border border-port-cobalt/40 text-blue-400 hover:text-blue-300 rounded-lg text-[11px] font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                            >
+                              <Play className="w-3 h-3 text-port-cobalt fill-current" />
+                              <span>Iniciar Execução ➔</span>
+                            </button>
+                          )}
+
+                          {/* 2. Em Execução ➔ Pausar p/ Peça ou Enviar p/ QA */}
+                          {wo.status === 'EM_EXECUCAO' && (
+                            <div className="grid grid-cols-2 gap-1.5 w-full">
+                              <button
+                                onClick={() => handleUpdateStatus(wo.id, 'AGUARDANDO_PECA', 'Pausa operacional: aguardando componentes de estoque')}
+                                className="py-1 px-2 bg-purple-500/15 hover:bg-purple-500/25 border border-purple-500/30 text-purple-300 rounded-lg text-[10px] font-medium flex items-center justify-center gap-1 transition-all cursor-pointer"
+                              >
+                                <Pause className="w-2.5 h-2.5" />
+                                <span>Pausar Peça</span>
+                              </button>
+                              <button
+                                onClick={() => handleUpdateStatus(wo.id, 'VALIDACAO_QA', 'Serviço finalizado: encaminhado para validação e auditoria QA')}
+                                className="py-1 px-2 bg-port-emerald/15 hover:bg-port-emerald/25 border border-port-emerald/30 text-port-emerald rounded-lg text-[10px] font-medium flex items-center justify-center gap-1 transition-all cursor-pointer"
+                              >
+                                <ShieldCheck className="w-2.5 h-2.5" />
+                                <span>Enviar QA ➔</span>
+                              </button>
+                            </div>
+                          )}
+
+                          {/* 3. Aguardando Peça ➔ Retomar Serviço */}
+                          {wo.status === 'AGUARDANDO_PECA' && (
+                            <button
+                              onClick={() => handleUpdateStatus(wo.id, 'EM_EXECUCAO', 'Peça recebida: retomando execução técnica')}
+                              className="w-full py-1.5 px-2.5 bg-port-amber/15 hover:bg-port-amber/25 border border-port-amber/40 text-port-amber rounded-lg text-[11px] font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                            >
+                              <Play className="w-3 h-3 text-port-amber fill-current" />
+                              <span>Retomar Serviço ➔</span>
+                            </button>
+                          )}
+
+                          {/* 4. Concluídas / QA ➔ Carimbo de SLA Cumprido */}
+                          {['CONCLUIDA', 'VALIDACAO_QA'].includes(wo.status) && (
+                            <div className="w-full py-1 px-2 bg-port-emerald/10 border border-port-emerald/25 rounded-lg flex items-center justify-between text-[10px] font-mono text-port-emerald">
+                              <span className="flex items-center gap-1 font-semibold">
+                                <CheckCircle2 className="w-3 h-3" />
+                                {wo.status === 'CONCLUIDA' ? 'Encerramento Auditado' : 'Em Aceite QA'}
+                              </span>
+                              <span className="text-[9px] text-slate-400">SLA OK</span>
+                            </div>
+                          )}
+
+                        </div>
+                      </motion.div>
+                    );
+                  })
                 )}
               </div>
 

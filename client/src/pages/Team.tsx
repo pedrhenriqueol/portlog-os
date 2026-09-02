@@ -33,6 +33,13 @@ export const Team: React.FC = () => {
     loadTeam();
   }, []);
 
+  const handleFillDemo = () => {
+    setName('Carlos Mendes');
+    setEmail('carlos.mendes@portlog-terminal.com');
+    setPassword('PortLog@2026');
+    setRole('TECNICO_MANUTENCAO');
+  };
+
   const handleCreateMember = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormLoading(true);
@@ -135,9 +142,18 @@ export const Team: React.FC = () => {
             >
               <div className="flex items-center justify-between pb-3 border-b border-port-border/60">
                 <h3 className="font-bold text-white text-base">Novo Membro da Equipe</h3>
-                <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-white">
-                  <X className="w-5 h-5" />
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleFillDemo}
+                    className="px-2.5 py-1 bg-port-cobalt/15 hover:bg-port-cobalt/25 border border-port-cobalt/30 text-blue-400 hover:text-blue-300 text-[11px] font-medium rounded-lg transition-all cursor-pointer font-mono"
+                  >
+                    Preencher Demo
+                  </button>
+                  <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-white">
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
               </div>
 
               {error && (

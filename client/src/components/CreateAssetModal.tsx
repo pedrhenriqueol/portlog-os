@@ -25,6 +25,14 @@ export const CreateAssetModal: React.FC<CreateAssetModalProps> = ({
 
   if (!isOpen) return null;
 
+  const handleFillDemo = () => {
+    setCode('STS-03');
+    setName('Guindaste Portuário Super Post-Panamax 65T');
+    setCategory('GUINDASTE_STS');
+    setLocationBerth('Berço 02 (Cais Norte)');
+    setHourMeter(12480);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
