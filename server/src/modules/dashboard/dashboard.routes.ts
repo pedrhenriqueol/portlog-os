@@ -50,15 +50,22 @@ export async function dashboardRoutes(app: FastifyInstance) {
       select: { startedAt: true, completedAt: true }
     });
 
+    // Cálculo determinístico e padronizado em UTC do MTTR (Mean Time to Repair)
     let totalRepairHours = 0;
+    let validCount = 0;
     completedWOs.forEach(wo => {
       if (wo.startedAt && wo.completedAt) {
-        const diffMs = new Date(wo.completedAt).getTime() - new Date(wo.startedAt).getTime();
-        totalRepairHours += diffMs / (1000 * 60 * 60);
+        const startUtc = new Date(wo.startedAt).getTime();
+        const completeUtc = new Date(wo.completedAt).getTime();
+        const diffMs = completeUtc - startUtc;
+        if (diffMs >= 0) {
+          totalRepairHours += diffMs / (1000 * 60 * 60);
+          validCount++;
+        }
       }
     });
 
-    const mttrHours = completedWOs.length > 0 ? (totalRepairHours / completedWOs.length).toFixed(1) : '0.0';
+    const mttrHours = validCount > 0 ? (totalRepairHours / validCount).toFixed(1) : '0.0';
 
     return reply.send({
       metrics: {

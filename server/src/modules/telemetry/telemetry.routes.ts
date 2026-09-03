@@ -74,8 +74,9 @@ export async function telemetryRoutes(app: FastifyInstance) {
     const bodySchema = z.object({
       assetId: z.string().uuid(),
       sensorType: z.enum(['TEMPERATURA', 'VIBRACAO', 'PRESSAO_HIDRAULICA']),
-      currentValue: z.number(),
-      threshold: z.number()
+      // Validação estrita de limites físicos operacionais para descartar payloads corrompidos
+      currentValue: z.number().min(-50, 'Leitura abaixo do zero operacional').max(600, 'Leitura acima do limite físico de sensor'),
+      threshold: z.number().min(-50).max(600)
     });
 
     const { assetId, sensorType, currentValue, threshold } = bodySchema.parse(request.body);
@@ -130,6 +131,7 @@ export async function telemetryRoutes(app: FastifyInstance) {
           action: 'IOT_PREDICTIVE_WO_TRIGGERED',
           entity: 'WorkOrder',
           entityId: createdWO.id,
+          ipAddress: request.ip,
           details: {
             sensorType,
             currentValue,

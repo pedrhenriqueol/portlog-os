@@ -131,6 +131,18 @@ export async function workOrderRoutes(app: FastifyInstance) {
     return reply.status(201).send({ workOrder });
   });
 
+// ── MÁQUINA DE ESTADOS FINITA (FSM) PARA O KANBAN INDUSTRIAL ──
+const ALLOWED_TRANSITIONS: Record<string, string[]> = {
+  ABERTA: ['EM_TRIAGEM', 'CANCELADA'],
+  EM_TRIAGEM: ['APROVADA', 'CANCELADA'],
+  APROVADA: ['EM_EXECUCAO', 'CANCELADA'],
+  EM_EXECUCAO: ['AGUARDANDO_PECA', 'VALIDACAO_QA', 'CANCELADA'],
+  AGUARDANDO_PECA: ['EM_EXECUCAO', 'CANCELADA'],
+  VALIDACAO_QA: ['CONCLUIDA', 'EM_EXECUCAO', 'CANCELADA'],
+  CONCLUIDA: [], // Estado terminal imutável
+  CANCELADA: []  // Estado terminal imutável
+};
+
   // ── 3. TRANSIÇÃO DE ESTADOS DA OS COM MÁQUINA DE ESTADOS BLINDADA ──
   app.patch('/:id/status', async (request, reply) => {
     const paramsSchema = z.object({ id: z.string().uuid() });
@@ -152,14 +164,34 @@ export async function workOrderRoutes(app: FastifyInstance) {
       throw new AppError('Ordem de serviço não encontrada.', 404);
     }
 
-    // Regras de Negócio e Segurança de QA:
-    // Apenas QA ou Supervisor pode aprovar finalização para 'CONCLUIDA'
+    // 1. Validação Estrita da Máquina de Estados Finita (Impede saltos ilegais)
+    const validNextStates = ALLOWED_TRANSITIONS[currentWO.status] || [];
+    if (!validNextStates.includes(targetStatus)) {
+      throw new AppError(
+        `Transição de estado ilegal: não é permitido transicionar a OS diretamente de '${currentWO.status}' para '${targetStatus}'. O fluxo operacional deve respeitar o ciclo de vida do Kanban.`,
+        422
+      );
+    }
+
+    // 2. Validação de Governança RBAC Granular por Ação:
+    if (targetStatus === 'CANCELADA') {
+      if (!['ADMIN_MASTER', 'SUPERVISOR_OPERACIONAL'].includes(role)) {
+        throw new AppError('Apenas Administradores ou Supervisores Operacionais possuem permissão para cancelar Ordens de Serviço.', 403);
+      }
+    }
+
+    if (targetStatus === 'APROVADA') {
+      if (!['ADMIN_MASTER', 'SUPERVISOR_OPERACIONAL'].includes(role)) {
+        throw new AppError('Apenas Administradores ou Supervisores Operacionais podem aprovar Ordens de Serviço em triagem.', 403);
+      }
+    }
+
     if (targetStatus === 'CONCLUIDA') {
       if (!['ADMIN_MASTER', 'SUPERVISOR_OPERACIONAL', 'AUDITOR_QA'].includes(role)) {
-        throw new AppError('Apenas Supervisores ou Auditores de QA podem dar o aceite final na OS.', 403);
+        throw new AppError('Apenas Supervisores ou Auditores de QA podem dar o aceite final e concluir a OS.', 403);
       }
 
-      // Validação de conformidade: não pode concluir se houver checklist pendente
+      // Validação de conformidade operacional: 100% dos checklists devem estar validados
       const pendingChecklists = currentWO.checklists.filter(c => !c.completed);
       if (pendingChecklists.length > 0) {
         throw new AppError(`Não é possível concluir. Existem ${pendingChecklists.length} itens pendentes de validação no checklist técnico.`, 400);
@@ -198,6 +230,7 @@ export async function workOrderRoutes(app: FastifyInstance) {
           action: 'WO_STATUS_TRANSITION',
           entity: 'WorkOrder',
           entityId: id,
+          ipAddress: request.ip,
           details: {
             from: currentWO.status,
             to: targetStatus,

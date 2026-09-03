@@ -94,10 +94,14 @@ export async function authRoutes(app: FastifyInstance) {
       throw new AppError('Credenciais inválidas.', 401);
     }
 
-    // Assina o token JWT no server
-    const token = await reply.jwtSign(
-      { tenantId: tenant.id, role: user.role },
-      { sub: user.id, expiresIn: env.JWT_EXPIRES_IN }
+    // Assina o token JWT no server com tipagem estrita
+    const token = app.jwt.sign(
+      {
+        sub: user.id,
+        tenantId: tenant.id,
+        role: user.role
+      },
+      { expiresIn: env.JWT_EXPIRES_IN }
     );
 
     // Salva o token em cookie com SameSite=None e Secure=true para compatibilidade cross-origin Vercel <-> Render

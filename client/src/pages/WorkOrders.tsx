@@ -26,6 +26,7 @@ export const WorkOrders: React.FC = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedWO, setSelectedWO] = useState<WorkOrder | null>(null);
   const [transitioningId, setTransitioningId] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const loadData = async () => {
     try {
@@ -52,11 +53,16 @@ export const WorkOrders: React.FC = () => {
     await loadData();
   };
 
-  // Movimentação de status com atualização otimista e persistência no backend
+  // Movimentação de status com atualização otimista e ROLLBACK imediato em caso de erro
   const handleUpdateStatus = async (id: string, status: WOStatus, notes?: string) => {
     setTransitioningId(id);
+    setErrorMessage(null);
+
+    // Salva snapshot para rollback
+    const previousOrders = [...workOrders];
+    const previousSelected = selectedWO ? { ...selectedWO } : null;
     
-    // Atualização otimista
+    // Atualização otimista na UI
     setWorkOrders(prev => prev.map(wo => wo.id === id ? { ...wo, status } : wo));
     if (selectedWO && selectedWO.id === id) {
       setSelectedWO({ ...selectedWO, status });
@@ -66,9 +72,10 @@ export const WorkOrders: React.FC = () => {
       await api.patch(`/work-orders/${id}/status`, { status, notes });
       await loadData();
     } catch (err: any) {
-      console.error('Erro ao transicionar status:', err);
-      // Recarrega o estado real do servidor em caso de falha de validação/permissão
-      await loadData();
+      // Rollback otimista instantâneo para o estado anterior
+      setWorkOrders(previousOrders);
+      if (previousSelected) setSelectedWO(previousSelected);
+      setErrorMessage(err.response?.data?.message || err.message || 'Falha ao transicionar status da Ordem de Serviço.');
     } finally {
       setTransitioningId(null);
     }
@@ -184,8 +191,28 @@ export const WorkOrders: React.FC = () => {
         </div>
       </div>
 
-      {/* Kanban Board Industrial Interativo */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 items-start">
+      {errorMessage && (
+        <motion.div
+          initial={{ opacity: 0, y: -6 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center justify-between gap-3 shadow-sm"
+        >
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0" />
+            <span>{errorMessage}</span>
+          </div>
+          <button 
+            onClick={() => setErrorMessage(null)} 
+            className="text-slate-400 hover:text-white text-xs cursor-pointer"
+          >
+            ✕
+          </button>
+        </motion.div>
+      )}
+
+      {/* Kanban Board Industrial Interativo (Zero Overflow Horizontal em todas as telas) */}
+      <div className="overflow-x-auto pb-4 pt-1">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 items-start min-w-[300px] lg:min-w-0">
         {columns.map((col) => {
           const ordersInCol = workOrders.filter(wo => {
             if (col.id === 'ABERTA') return ['ABERTA', 'EM_TRIAGEM', 'APROVADA'].includes(wo.status);
@@ -321,6 +348,7 @@ export const WorkOrders: React.FC = () => {
             </div>
           );
         })}
+        </div>
       </div>
 
       {/* Modal de Criação de OS */}

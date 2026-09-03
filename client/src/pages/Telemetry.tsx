@@ -42,11 +42,34 @@ export const Telemetry: React.FC = () => {
     }
   };
 
-  // Polling automático a cada 5 segundos para simular telemetria em tempo real
+  // Polling automático com cancelamento limpo e proteção contra memory leaks
   useEffect(() => {
-    fetchTelemetry();
-    const interval = setInterval(fetchTelemetry, 5000);
-    return () => clearInterval(interval);
+    let isMounted = true;
+    const controller = new AbortController();
+
+    const safeFetch = async () => {
+      try {
+        const response = await api.get('/telemetry/live', { signal: controller.signal });
+        if (isMounted) {
+          setReadings(response.data.readings);
+          setLoading(false);
+        }
+      } catch (err: any) {
+        if (err.name !== 'CanceledError' && err.name !== 'AbortError' && isMounted) {
+          console.error('Falha ao coletar telemetria IoT:', err);
+          setLoading(false);
+        }
+      }
+    };
+
+    safeFetch();
+    const interval = setInterval(safeFetch, 5000);
+
+    return () => {
+      isMounted = false;
+      controller.abort();
+      clearInterval(interval);
+    };
   }, []);
 
   const handleTriggerAnomaly = async (reading: SensorReading, sensorType: 'TEMPERATURA' | 'VIBRACAO' | 'PRESSAO_HIDRAULICA') => {
